@@ -2,7 +2,7 @@ from curl_cffi import requests
 from fake_useragent import FakeUserAgent
 from datetime import datetime
 from colorama import *
-import asyncio, json, uuid, os, pytz
+import asyncio, json, uuid, os, pytz, sys
 
 
 wib = pytz.timezone('Asia/Jakarta')
@@ -154,38 +154,7 @@ class Exeos:
         )
 
     def print_question(self):
-        while True:
-            try:
-                print("1. Use Exiting Nodes")
-                print("2. Create New Nodes")
-                connection_choice = int(input("Choose [1/2] -> ").strip())
-                if connection_choice in [1, 2]:
-                    break
-                else:
-                    print(f"{Fore.RED+Style.BRIGHT}Please enter either 1 or 2.{Style.RESET_ALL}")
-            except ValueError:
-                print(f"{Fore.RED+Style.BRIGHT}Invalid input. Enter a number (1 or 2).{Style.RESET_ALL}")
-
-        while True:
-            try:
-                print("1. Run With Monosans Proxy")
-                print("2. Run With Private Proxy")
-                print("3. Run Without Proxy")
-                proxy_choice = int(input("Choose [1/2/3] -> ").strip())
-
-                if proxy_choice in [1, 2, 3]:
-                    proxy_type = (
-                        "Run With Monosans Proxy" if proxy_choice == 1 else 
-                        "Run With Private Proxy" if proxy_choice == 2 else 
-                        "Run Without Proxy"
-                    )
-                    print(f"{Fore.GREEN + Style.BRIGHT}{proxy_type} Selected.{Style.RESET_ALL}")
-                    break
-                else:
-                    print(f"{Fore.RED + Style.BRIGHT}Please enter either 1, 2 or 3.{Style.RESET_ALL}")
-            except ValueError:
-                print(f"{Fore.RED + Style.BRIGHT}Invalid input. Enter a number (1, 2 or 3).{Style.RESET_ALL}")
-
+        proxy_choice = 2
         nodes_count = 0
         if proxy_choice in [1, 2]:
             while True:
@@ -198,7 +167,7 @@ class Exeos:
                 except ValueError:
                     print(f"{Fore.RED+Style.BRIGHT}Invalid input. Enter a number.{Style.RESET_ALL}")
 
-        return nodes_count, proxy_choice, connection_choice
+        return nodes_count
         
     async def get_ip_address(self, email: str, node_id: str, proxy=None, retries=5):
         url = "https://api.ipify.org/?format=json"
@@ -493,7 +462,11 @@ class Exeos:
             for _ in range(nodes_count):
                 node_id = self.generate_node_id()
                 nodes.append({"nodeId":node_id})
-
+            self.log(
+                f"{Fore.GREEN + Style.BRIGHT}Nodes's Total Create: {Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT}{len(nodes)}{Style.RESET_ALL}"
+            )
+            sys.exit()  # 直接退出整个程序
             return nodes
         
         node_id = self.generate_node_id()
@@ -514,19 +487,22 @@ class Exeos:
                 
                 await asyncio.gather(*tasks)
 
-    async def main(self):
+    async def main(self,argv):
+        nodes_count = 0
+        connection_choice = 1
+        if len(argv) > 0:
+            connection_choice = 2
+            #nodes_count = self.print_question()
+
         try:
+            #proxy_choice =2 
             accounts = self.load_accounts()
             if not accounts:
                 self.log(f"{Fore.RED+Style.BRIGHT}No Accounts Loaded.{Style.RESET_ALL}")
                 return
 
-            nodes_count, proxy_choice, connection_choice = self.print_question()
-
-            use_proxy = False
-            if proxy_choice in [1, 2]:
-                use_proxy = True
-
+            use_proxy = True
+            proxy_choice = 2
             
             self.clear_terminal()
             self.welcome()
@@ -537,6 +513,7 @@ class Exeos:
 
             if use_proxy:
                 await self.load_proxies(proxy_choice)
+                nodes_count = len(self.proxies)
 
             self.log(f"{Fore.CYAN + Style.BRIGHT}-{Style.RESET_ALL}"*75)
 
@@ -563,7 +540,7 @@ class Exeos:
 if __name__ == "__main__":
     try:
         bot = Exeos()
-        asyncio.run(bot.main())
+        asyncio.run(bot.main(sys.argv[1:]))
     except KeyboardInterrupt:
         print(
             f"{Fore.CYAN + Style.BRIGHT}[ {datetime.now().astimezone(wib).strftime('%x %X %Z')} ]{Style.RESET_ALL}"
