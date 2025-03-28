@@ -30,7 +30,7 @@ class Exeos:
             "Sec-Fetch-Storage-Access": "active",
             "User-Agent": ua
         }
-        self.code = "REFZ26PQGAF"
+        self.code = "REFYH1DQPE"
         self.proxies = []
         self.proxy_index = 0
         self.account_proxies = {}
